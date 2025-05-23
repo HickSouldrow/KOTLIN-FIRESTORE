@@ -3,14 +3,12 @@ package com.example.firestorepam
 import android.content.ContentValues.TAG
 import android.os.Bundle
 import android.util.Log
-import android.widget.Button
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,12 +18,10 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import java.security.MessageDigest
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -35,12 +31,14 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.TextField
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import com.example.firestorepam.ui.theme.FirestorePamTheme
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,25 +61,30 @@ fun App() {
     var email by remember { mutableStateOf("") }
     var senha by remember { mutableStateOf("") }
     var telefone by remember { mutableStateOf("") }
-
+    var mostrarRegistros by remember { mutableStateOf(false) }
+    val db = Firebase.firestore
+    val banco = remember { mutableStateListOf<Map<String, Any>>() }
+    val scrollState = rememberScrollState()
     val backgroundColor = Color(0xFF121212)
     val fieldBackground = Color(0xFF1E1E1E)
     val textColor = Color.White
     val labelColor = Color.Gray
+    val primaryColor = Color(0xFF5EA500) // Nova cor verde
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(scrollState)
             .background(backgroundColor)
             .padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
         Text(
-            "Registro Mobile",
+            "Registro Hick1lugar",
             fontFamily = FontFamily.Cursive,
             fontSize = 26.sp,
-            color = textColor,
+            color = primaryColor, // Alterado para a nova cor
             modifier = Modifier.padding(vertical = 24.dp)
         )
 
@@ -93,12 +96,11 @@ fun App() {
 
         Button(
             onClick = {
-                val db = Firebase.firestore
                 val banco = hashMapOf(
                     "nome" to nome,
                     "apelido" to apelido,
                     "email" to email,
-                    "senha" to hashPassword(senha),
+                    "senha" to senha,
                     "telefone" to telefone,
                 )
 
@@ -120,10 +122,67 @@ fun App() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 24.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3F51B5)),
+            colors = ButtonDefaults.buttonColors(containerColor = primaryColor), // Alterado para a nova cor
             shape = RoundedCornerShape(10.dp)
         ) {
             Text("Cadastrar", fontSize = 18.sp, color = Color.White)
+        }
+
+        Button(
+            onClick = {
+                if (!mostrarRegistros) {
+                    db.collection("banco")
+                        .get()
+                        .addOnSuccessListener { result ->
+                            banco.clear()
+                            for (document in result) {
+                                banco.add(document.data)
+                            }
+                            mostrarRegistros = true
+                        }
+                        .addOnFailureListener { exception ->
+                            Log.w(TAG, "Error getting documents.", exception)
+                        }
+                } else {
+                    mostrarRegistros = false
+                }
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 24.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = primaryColor), // Alterado para a nova cor
+            shape = RoundedCornerShape(10.dp)
+        ) {
+            Text(
+                if (mostrarRegistros) "Ocultar registros" else "Exibir todos os registros",
+                fontSize = 18.sp,
+                color = Color.White
+            )
+        }
+
+        if (mostrarRegistros) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 24.dp)
+            ) {
+                banco.forEachIndexed { index, banco ->
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .background(Color(0xFF2C2C2C), shape = RoundedCornerShape(8.dp))
+                            .padding(12.dp)
+                    ) {
+                        Text("Registro ${index + 1}", color = primaryColor, fontSize = 18.sp) // Alterado para a nova cor
+                        Text("Nome: ${banco["nome"]}", color = Color.White)
+                        Text("Apelido: ${banco["apelido"]}", color = Color.White)
+                        Text("Email: ${banco["email"]}", color = Color.White)
+                        Text("Senha: ${banco["senha"]}", color = Color.White)
+                        Text("Telefone: ${banco["telefone"]}", color = Color.White)
+                    }
+                }
+            }
         }
     }
 }
@@ -151,19 +210,13 @@ fun CustomDarkTextField(
             unfocusedContainerColor = backgroundColor,
             focusedTextColor = textColor,
             unfocusedTextColor = textColor,
-            cursorColor = Color.White,
+            cursorColor = Color(0xFF5EA500), // Alterado para a nova cor
             focusedLabelColor = labelColor,
-            unfocusedLabelColor = labelColor
+            unfocusedLabelColor = labelColor,
+            focusedIndicatorColor = Color(0xFF5EA500), // Adicionado - cor do indicador quando focado
+            unfocusedIndicatorColor = Color.Gray // Adicionado - cor do indicador quando não focado
         )
     )
-}
-
-
-fun hashPassword(password: String): String {
-    val bytes = password.toByteArray()
-    val md = MessageDigest.getInstance("SHA-256")
-    val digest = md.digest(bytes)
-    return digest.fold("") { str, it -> str + "%02x".format(it) }
 }
 
 @Preview
