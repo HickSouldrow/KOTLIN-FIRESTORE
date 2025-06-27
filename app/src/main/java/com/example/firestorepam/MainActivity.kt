@@ -517,7 +517,7 @@ fun LoginScreen(
                 IconButton(onClick = { mostrarSenha = !mostrarSenha }) {
                     Icon(
                         painter = painterResource(
-                            id = if (mostrarSenha) R.drawable.logo_principal_foreground else R.drawable.logo_principal_foreground
+                            id = if (mostrarSenha) R.drawable.visivel else R.drawable.invisivel
                         ),
                         contentDescription = "Toggle password visibility",
                         tint = labelColor
